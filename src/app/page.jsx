@@ -1,5 +1,4 @@
 "use client";
-import Image from "next/image";
 import { useState, useEffect } from "react";
 
 const daysOfWeek = [
@@ -13,17 +12,17 @@ const daysOfWeek = [
 ];
 
 export default function Home() {
-  const [completed, setCompleted] = useState<{ [key: string]: boolean }>({});
-  const [workoutsByDay, setWorkoutsByDay] = useState<{ [key: string]: any | null }>({});
+  const [completed, setCompleted] = useState({});
+  const [workoutsByDay, setWorkoutsByDay] = useState({});
 
   useEffect(() => {
     const stored = localStorage.getItem("completedDays");
     if (stored) setCompleted(JSON.parse(stored));
     // Load workouts and map by day
     const workouts = JSON.parse(localStorage.getItem("workouts") || "[]");
-    const byDay: { [key: string]: any | null } = {};
+    const byDay = {};
     daysOfWeek.forEach(day => {
-      byDay[day] = workouts.find((w: any) => w.days && w.days.includes(day)) || null;
+      byDay[day] = workouts.find((w) => w.days && w.days.includes(day)) || null;
     });
     setWorkoutsByDay(byDay);
   }, []);
@@ -32,11 +31,33 @@ export default function Home() {
     localStorage.setItem("completedDays", JSON.stringify(completed));
   }, [completed]);
 
-  const handleCheckbox = (day: string) => {
+  // Add a useEffect to listen for storage changes and update completed state
+  useEffect(() => {
+    const handleStorage = () => {
+      const stored = localStorage.getItem("completedDays");
+      if (stored) setCompleted(JSON.parse(stored));
+    };
+    window.addEventListener("storage", handleStorage);
+    return () => window.removeEventListener("storage", handleStorage);
+  }, []);
+
+  // Add a useEffect to update completed state when the page becomes visible
+  useEffect(() => {
+    const handleVisibility = () => {
+      if (document.visibilityState === "visible") {
+        const stored = localStorage.getItem("completedDays");
+        if (stored) setCompleted(JSON.parse(stored));
+      }
+    };
+    document.addEventListener("visibilitychange", handleVisibility);
+    return () => document.removeEventListener("visibilitychange", handleVisibility);
+  }, []);
+
+  const handleCheckbox = (day) => {
     setCompleted((prev) => ({ ...prev, [day]: !prev[day] }));
   };
 
-  const handleStart = (day: string) => {
+  const handleStart = (day) => {
     window.location.href = `/session/${day.toLowerCase()}`;
   };
 
@@ -72,4 +93,4 @@ export default function Home() {
       </ul>
     </div>
   );
-}
+} 

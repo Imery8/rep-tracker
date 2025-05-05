@@ -4,14 +4,14 @@ import NewWorkoutModal from "./NewWorkoutModal";
 
 export default function MyWorkouts() {
   const [showModal, setShowModal] = useState(false);
-  const [workouts, setWorkouts] = useState<any[]>([]);
+  const [workouts, setWorkouts] = useState([]);
 
   useEffect(() => {
     const stored = localStorage.getItem("workouts");
     if (stored) setWorkouts(JSON.parse(stored));
   }, []);
 
-  const handleSaveWorkout = (workout: any) => {
+  const handleSaveWorkout = (workout) => {
     const updated = [...workouts, { ...workout, id: Date.now() }];
     setWorkouts(updated);
     localStorage.setItem("workouts", JSON.stringify(updated));

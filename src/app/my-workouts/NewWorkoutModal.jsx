@@ -1,5 +1,4 @@
 "use client";
-
 import React, { useState } from "react";
 
 const daysOfWeek = [
@@ -12,15 +11,15 @@ const daysOfWeek = [
   "Sunday",
 ];
 
-export default function NewWorkoutModal({ onClose, onSave }: { onClose: () => void; onSave: (workout: any) => void }) {
+export default function NewWorkoutModal({ onClose, onSave }) {
   const [name, setName] = useState("");
   const [sets, setSets] = useState(1);
-  const [days, setDays] = useState<string[]>([]);
+  const [days, setDays] = useState([]);
   const [exercises, setExercises] = useState([
     { name: "", reps: 1, rest: 30 },
   ]);
 
-  const handleExerciseChange = (idx: number, field: string, value: any) => {
+  const handleExerciseChange = (idx, field, value) => {
     setExercises((prev) =>
       prev.map((ex, i) => (i === idx ? { ...ex, [field]: value } : ex))
     );
@@ -30,17 +29,17 @@ export default function NewWorkoutModal({ onClose, onSave }: { onClose: () => vo
     setExercises((prev) => [...prev, { name: "", reps: 1, rest: 30 }]);
   };
 
-  const removeExercise = (idx: number) => {
+  const removeExercise = (idx) => {
     setExercises((prev) => prev.filter((_, i) => i !== idx));
   };
 
-  const handleDayToggle = (day: string) => {
+  const handleDayToggle = (day) => {
     setDays((prev) =>
       prev.includes(day) ? prev.filter((d) => d !== day) : [...prev, day]
     );
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = (e) => {
     e.preventDefault();
     onSave({ name, sets, days, exercises });
   };
