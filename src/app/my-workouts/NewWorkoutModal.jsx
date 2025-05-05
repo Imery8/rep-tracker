@@ -11,11 +11,11 @@ const daysOfWeek = [
   "Sunday",
 ];
 
-export default function NewWorkoutModal({ onClose, onSave }) {
-  const [name, setName] = useState("");
-  const [sets, setSets] = useState(1);
-  const [days, setDays] = useState([]);
-  const [exercises, setExercises] = useState([
+export default function NewWorkoutModal({ onClose, onSave, initialWorkout }) {
+  const [name, setName] = useState(initialWorkout ? initialWorkout.name : "");
+  const [sets, setSets] = useState(initialWorkout ? initialWorkout.sets : 1);
+  const [days, setDays] = useState(initialWorkout ? initialWorkout.days : []);
+  const [exercises, setExercises] = useState(initialWorkout ? initialWorkout.exercises : [
     { name: "", reps: 1, rest: 30 },
   ]);
 
@@ -48,7 +48,7 @@ export default function NewWorkoutModal({ onClose, onSave }) {
     <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50">
       <div className="bg-white rounded-lg shadow-lg p-6 w-full max-w-lg relative">
         <button className="absolute top-2 right-2 text-gray-500" onClick={onClose}>&times;</button>
-        <h2 className="text-xl font-bold mb-4">Create New Workout</h2>
+        <h2 className="text-xl font-bold mb-4">{initialWorkout ? "Edit Workout" : "Create New Workout"}</h2>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
             <label className="block font-medium mb-1">Workout Name</label>
@@ -87,7 +87,7 @@ export default function NewWorkoutModal({ onClose, onSave }) {
           </div>
           <div className="flex justify-end gap-2">
             <button type="button" className="px-4 py-2 rounded bg-gray-300" onClick={onClose}>Cancel</button>
-            <button type="submit" className="px-4 py-2 rounded bg-green-600 text-white">Save Workout</button>
+            <button type="submit" className="px-4 py-2 rounded bg-green-600 text-white">{initialWorkout ? "Save Changes" : "Save Workout"}</button>
           </div>
         </form>
       </div>

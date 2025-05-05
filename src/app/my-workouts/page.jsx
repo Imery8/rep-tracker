@@ -5,6 +5,7 @@ import NewWorkoutModal from "./NewWorkoutModal";
 export default function MyWorkouts() {
   const [showModal, setShowModal] = useState(false);
   const [workouts, setWorkouts] = useState([]);
+  const [editingWorkout, setEditingWorkout] = useState(null);
 
   useEffect(() => {
     const stored = localStorage.getItem("workouts");
@@ -12,10 +13,29 @@ export default function MyWorkouts() {
   }, []);
 
   const handleSaveWorkout = (workout) => {
-    const updated = [...workouts, { ...workout, id: Date.now() }];
+    let updated;
+    if (editingWorkout) {
+      // Edit mode: update existing workout
+      updated = workouts.map((w) => w.id === editingWorkout.id ? { ...workout, id: editingWorkout.id } : w);
+    } else {
+      // New workout
+      updated = [...workouts, { ...workout, id: Date.now() }];
+    }
     setWorkouts(updated);
     localStorage.setItem("workouts", JSON.stringify(updated));
     setShowModal(false);
+    setEditingWorkout(null);
+  };
+
+  const handleDeleteWorkout = (id) => {
+    const updated = workouts.filter((w) => w.id !== id);
+    setWorkouts(updated);
+    localStorage.setItem("workouts", JSON.stringify(updated));
+  };
+
+  const handleEditWorkout = (workout) => {
+    setEditingWorkout(workout);
+    setShowModal(true);
   };
 
   return (
@@ -40,12 +60,20 @@ export default function MyWorkouts() {
               </div>
               <div className="text-sm text-gray-600">Assigned to: {w.days && w.days.length > 0 ? w.days.join(", ") : "No days assigned"}</div>
               <div className="text-sm text-gray-600">Exercises: {w.exercises.length}</div>
+              <div className="flex gap-2 mt-2">
+                <button className="px-3 py-1 rounded bg-yellow-400 text-black hover:bg-yellow-500" onClick={() => handleEditWorkout(w)}>Edit</button>
+                <button className="px-3 py-1 rounded bg-red-600 text-white hover:bg-red-700" onClick={() => handleDeleteWorkout(w.id)}>Delete</button>
+              </div>
             </li>
           ))}
         </ul>
       )}
       {showModal && (
-        <NewWorkoutModal onClose={() => setShowModal(false)} onSave={handleSaveWorkout} />
+        <NewWorkoutModal
+          onClose={() => { setShowModal(false); setEditingWorkout(null); }}
+          onSave={handleSaveWorkout}
+          initialWorkout={editingWorkout}
+        />
       )}
     </div>
   );

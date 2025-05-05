@@ -1,5 +1,6 @@
 "use client";
 import { useState, useEffect } from "react";
+import { getCompletedDays } from "./utils/completedDays";
 
 const daysOfWeek = [
   "Monday",
@@ -16,8 +17,6 @@ export default function Home() {
   const [workoutsByDay, setWorkoutsByDay] = useState({});
 
   useEffect(() => {
-    const stored = localStorage.getItem("completedDays");
-    if (stored) setCompleted(JSON.parse(stored));
     // Load workouts and map by day
     const workouts = JSON.parse(localStorage.getItem("workouts") || "[]");
     const byDay = {};
@@ -28,33 +27,13 @@ export default function Home() {
   }, []);
 
   useEffect(() => {
-    localStorage.setItem("completedDays", JSON.stringify(completed));
-  }, [completed]);
-
-  // Add a useEffect to listen for storage changes and update completed state
-  useEffect(() => {
-    const handleStorage = () => {
-      const stored = localStorage.getItem("completedDays");
-      if (stored) setCompleted(JSON.parse(stored));
-    };
-    window.addEventListener("storage", handleStorage);
-    return () => window.removeEventListener("storage", handleStorage);
-  }, []);
-
-  // Add a useEffect to update completed state when the page becomes visible
-  useEffect(() => {
-    const handleVisibility = () => {
-      if (document.visibilityState === "visible") {
-        const stored = localStorage.getItem("completedDays");
-        if (stored) setCompleted(JSON.parse(stored));
-      }
-    };
-    document.addEventListener("visibilitychange", handleVisibility);
-    return () => document.removeEventListener("visibilitychange", handleVisibility);
+    setCompleted(getCompletedDays());
   }, []);
 
   const handleCheckbox = (day) => {
-    setCompleted((prev) => ({ ...prev, [day]: !prev[day] }));
+    const updated = { ...completed, [day]: !completed[day] };
+    setCompleted(updated);
+    localStorage.setItem("completedDays", JSON.stringify(updated));
   };
 
   const handleStart = (day) => {

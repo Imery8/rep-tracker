@@ -1,6 +1,7 @@
 "use client";
 import React, { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
+import { setCompletedDay } from "../../utils/completedDays";
 
 const daysOfWeek = [
   "Monday",
@@ -79,9 +80,7 @@ export default function SessionPage() {
   const handleNext = () => {
     // If this is the last rep of the last exercise in the last set, finish workout
     if (isFinalStep) {
-      const completed = JSON.parse(localStorage.getItem("completedDays") || "{}") || {};
-      completed[day] = true;
-      localStorage.setItem("completedDays", JSON.stringify(completed));
+      setCompletedDay(day);
       router.push("/");
       return;
     }
