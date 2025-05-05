@@ -15,9 +15,15 @@ export default function NewWorkoutModal({ onClose, onSave, initialWorkout }) {
   const [name, setName] = useState(initialWorkout ? initialWorkout.name : "");
   const [sets, setSets] = useState(initialWorkout ? initialWorkout.sets : 1);
   const [days, setDays] = useState(initialWorkout ? initialWorkout.days : []);
-  const [exercises, setExercises] = useState(initialWorkout ? initialWorkout.exercises : [
-    { name: "", reps: 1, rest: 30 },
-  ]);
+  const [exercises, setExercises] = useState(
+    initialWorkout
+      ? initialWorkout.exercises.map(ex => ({
+          ...ex,
+          reps: ex.reps === 1 ? "" : ex.reps,
+          rest: ex.rest === 30 ? "" : ex.rest,
+        }))
+      : [{ name: "", reps: "", rest: "" }]
+  );
 
   const handleExerciseChange = (idx, field, value) => {
     setExercises((prev) =>
@@ -26,7 +32,7 @@ export default function NewWorkoutModal({ onClose, onSave, initialWorkout }) {
   };
 
   const addExercise = () => {
-    setExercises((prev) => [...prev, { name: "", reps: 1, rest: 30 }]);
+    setExercises((prev) => [...prev, { name: "", reps: "", rest: "" }]);
   };
 
   const removeExercise = (idx) => {
@@ -41,12 +47,18 @@ export default function NewWorkoutModal({ onClose, onSave, initialWorkout }) {
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    onSave({ name, sets, days, exercises });
+    // Convert reps/rest to numbers or set defaults if empty
+    const cleanedExercises = exercises.map((ex) => ({
+      ...ex,
+      reps: ex.reps === "" ? 1 : Number(ex.reps),
+      rest: ex.rest === "" ? 30 : Number(ex.rest),
+    }));
+    onSave({ name, sets, days, exercises: cleanedExercises });
   };
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50">
-      <div className="bg-white rounded-lg shadow-lg p-6 w-full max-w-lg relative">
+      <div className="bg-gray-900 rounded-lg shadow-lg p-6 w-full max-w-lg relative">
         <button className="absolute top-2 right-2 text-gray-500" onClick={onClose}>&times;</button>
         <h2 className="text-xl font-bold mb-4">{initialWorkout ? "Edit Workout" : "Create New Workout"}</h2>
         <form onSubmit={handleSubmit} className="space-y-4">
@@ -75,8 +87,8 @@ export default function NewWorkoutModal({ onClose, onSave, initialWorkout }) {
               {exercises.map((ex, idx) => (
                 <div key={idx} className="flex gap-2 items-center">
                   <input type="text" placeholder="Exercise Name" className="border rounded px-2 py-1 flex-1" value={ex.name} onChange={e => handleExerciseChange(idx, "name", e.target.value)} required />
-                  <input type="number" min={1} placeholder="Reps" className="border rounded px-2 py-1 w-20" value={ex.reps} onChange={e => handleExerciseChange(idx, "reps", Number(e.target.value))} required />
-                  <input type="number" min={1} placeholder="Rest (sec)" className="border rounded px-2 py-1 w-24" value={ex.rest} onChange={e => handleExerciseChange(idx, "rest", Number(e.target.value))} required />
+                  <input type="number" min={1} placeholder="Reps" className="border rounded px-2 py-1 w-20" value={ex.reps} onChange={e => handleExerciseChange(idx, "reps", e.target.value)} required />
+                  <input type="number" min={1} placeholder="Rest (s)" className="border rounded px-2 py-1 w-24" value={ex.rest} onChange={e => handleExerciseChange(idx, "rest", e.target.value)} required />
                   {exercises.length > 1 && (
                     <button type="button" className="text-red-500" onClick={() => removeExercise(idx)}>&times;</button>
                   )}
@@ -86,7 +98,7 @@ export default function NewWorkoutModal({ onClose, onSave, initialWorkout }) {
             </div>
           </div>
           <div className="flex justify-end gap-2">
-            <button type="button" className="px-4 py-2 rounded bg-gray-300" onClick={onClose}>Cancel</button>
+            <button type="button" className="px-4 py-2 rounded bg-gray-500" onClick={onClose}>Cancel</button>
             <button type="submit" className="px-4 py-2 rounded bg-green-600 text-white">{initialWorkout ? "Save Changes" : "Save Workout"}</button>
           </div>
         </form>

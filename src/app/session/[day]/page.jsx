@@ -2,6 +2,7 @@
 import React, { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { setCompletedDay } from "../../utils/completedDays";
+import RestTimerCircle from "./RestTimerCircle";
 
 const daysOfWeek = [
   "Monday",
@@ -105,34 +106,55 @@ export default function SessionPage() {
     }, (exercise.rest + 0.1) * 1000); // Add a small buffer to ensure timer finishes
   };
 
-  // Only enable Next button if not showing rest
+  // Helper to format seconds as MM:SS
+  function formatTime(seconds) {
+    const m = String(Math.floor(seconds / 60)).padStart(2, "0");
+    const s = String(seconds % 60).padStart(2, "0");
+    return `${m}:${s}`;
+  }
+
   return (
-    <div className="max-w-xl mx-auto p-4">
-      <h1 className="text-2xl font-bold mb-6 text-center">Workout Session</h1>
-      <div className="mb-2 text-center text-lg font-semibold">{day}</div>
-      <div className="mb-2 text-center">Set: <span className="font-bold">{currentSet}</span> / {workout.sets}</div>
-      <div className="mb-2 text-center">Exercise: <span className="font-bold">{exercise.name}</span></div>
-      <div className="mb-2 text-center">Rep: <span className="font-bold">{currentRep}</span> / {exercise.reps}</div>
-      {/* Next Exercise display */}
-      {nextExerciseName === "Final exercise" ? (
-        <div className="mb-2 text-center font-bold">Final Exercise</div>
-      ) : (
-        <div className="mb-2 text-center">Next Exercise: <span className="font-bold">{nextExerciseName}</span></div>
-      )}
-      {showRest && (
-        <div className="text-center my-6">
-          <div className="text-2xl font-bold mb-2">Rest: {restTime}s</div>
-          <div className="text-gray-500">Get ready for the next rep!</div>
+    <div className="max-w-2xl mx-auto min-h-screen flex flex-col justify-between p-4">
+      {/* Top Row */}
+      <div className="flex justify-between items-center mb-8">
+        <div className="text-2xl font-bold">{day}</div>
+        <div className="text-3xl font-bold text-center flex-1">Workout Session</div>
+        <div className="text-2xl font-bold">Set: {currentSet}/{workout.sets}</div>
+      </div>
+      {/* Timer */}
+      <div className="flex flex-col items-center justify-center flex-1">
+        <div className="flex items-center justify-center">
+          {showRest ? (
+            <RestTimerCircle duration={exercise.rest} timeLeft={restTime} />
+          ) : (
+            <div className="w-80 h-80 rounded-full border-4 border-black flex items-center justify-center text-6xl font-mono select-none">
+              00:00
+            </div>
+          )}
         </div>
-      )}
-      <div className="flex justify-center mt-6">
-        <button
-          className="bg-blue-600 text-white px-6 py-2 rounded hover:bg-blue-700 disabled:bg-gray-300"
-          onClick={handleNext}
-          disabled={showRest}
-        >
-          {isFinalStep ? "Done" : "Next"}
-        </button>
+        {/* Exercise/Rep and Next button */}
+        <div className="flex items-center justify-center mt-8 gap-8">
+          <div className="text-xl">
+            <div className="mb-2">Exercise: <span className="font-bold">{exercise.name}</span></div>
+            <div>Rep: <span className="font-bold">{currentRep}</span> / {exercise.reps}</div>
+          </div>
+          <button
+            className="ml-8 w-20 h-20 rounded-full bg-blue-600 text-white text-2xl font-bold flex items-center justify-center shadow-lg hover:bg-blue-700 disabled:bg-gray-300 transition-all"
+            onClick={handleNext}
+            disabled={showRest}
+            style={{ minWidth: 80, minHeight: 80 }}
+          >
+            {isFinalStep ? "Done" : "Next"}
+          </button>
+        </div>
+        {/* Next Exercise label just below the above row */}
+        <div className="flex justify-center mt-6 mb-2">
+          {nextExerciseName === "Final exercise" ? (
+            <div className="font-bold text-xl">Final Exercise</div>
+          ) : (
+            <div className="text-xl">Next Exercise: <span className="font-bold">{nextExerciseName}</span></div>
+          )}
+        </div>
       </div>
     </div>
   );

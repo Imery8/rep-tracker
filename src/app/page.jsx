@@ -61,7 +61,7 @@ export default function Home() {
               </span>
             </div>
             <button
-              className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 disabled:bg-gray-300"
+              className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 disabled:bg-gray-800"
               onClick={() => handleStart(day)}
               disabled={!!completed[day] || !workoutsByDay[day]}
             >

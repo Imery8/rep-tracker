@@ -61,8 +61,8 @@ export default function MyWorkouts() {
               <div className="text-sm text-gray-600">Assigned to: {w.days && w.days.length > 0 ? w.days.join(", ") : "No days assigned"}</div>
               <div className="text-sm text-gray-600">Exercises: {w.exercises.length}</div>
               <div className="flex gap-2 mt-2">
-                <button className="px-3 py-1 rounded bg-yellow-400 text-black hover:bg-yellow-500" onClick={() => handleEditWorkout(w)}>Edit</button>
-                <button className="px-3 py-1 rounded bg-red-600 text-white hover:bg-red-700" onClick={() => handleDeleteWorkout(w.id)}>Delete</button>
+                <button className="px-3 py-1 rounded bg-gray-600 text-black hover:bg-gray-400" onClick={() => handleEditWorkout(w)}>Edit</button>
+                <button className="px-3 py-1 rounded bg-red-700 text-white hover:bg-red-600" onClick={() => handleDeleteWorkout(w.id)}>Delete</button>
               </div>
             </li>
           ))}
