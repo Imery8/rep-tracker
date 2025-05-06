@@ -42,7 +42,18 @@ export default function Home() {
 
   return (
     <div className="max-w-xl mx-auto p-4">
-      <h1 className="text-2xl font-bold mb-6 text-center">Workout Tracker</h1>
+      <div className="flex items-center justify-between mb-6">
+        <h1 className="text-2xl font-bold text-center flex-1">Workout Tracker</h1>
+        <button
+          className="ml-4 px-4 py-2 bg-gray-900 rounded hover:bg-gray-800 text-sm font-semibold"
+          onClick={() => {
+            localStorage.removeItem("completedDays");
+            setCompleted({});
+          }}
+        >
+          Reset
+        </button>
+      </div>
       <ul className="space-y-4">
         {daysOfWeek.map((day) => (
           <li key={day} className="flex items-center justify-between border rounded p-4">
