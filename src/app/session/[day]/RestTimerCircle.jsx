@@ -19,7 +19,7 @@ export default function RestTimerCircle({ duration, timeLeft }) {
   return (
     <div
       className="relative flex items-center justify-center"
-      style={{ width: size, height: size, pointerEvents: "none" }}
+      style={{ width: size, height: size}}
     >
       <svg width={size} height={size}>
         {/* Background orange circle */}
