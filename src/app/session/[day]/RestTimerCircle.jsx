@@ -40,8 +40,7 @@ export default function RestTimerCircle({ duration, timeLeft }) {
           strokeWidth={greyStroke}
           fill="none"
           strokeDasharray={circumference}
-          //strokeDashoffset={circumference}
-          strokeDashoffset={circumference * (1 - timeLeft / duration)}
+          strokeDashoffset={circumference}
 
           style={{
             animation: `dash ${duration}s linear forwards`
@@ -55,7 +54,7 @@ export default function RestTimerCircle({ duration, timeLeft }) {
       <style jsx>{`
         @keyframes dash {
           from {
-            stroke-dashoffset: ${-circumference};
+            stroke-dashoffset: ${circumference};
           }
           to {
             stroke-dashoffset: 0;
