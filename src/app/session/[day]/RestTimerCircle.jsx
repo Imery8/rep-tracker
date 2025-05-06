@@ -10,8 +10,6 @@ export default function RestTimerCircle({ duration, timeLeft }) {
   const [initialTime] = useState(Date.now());
 
   const elapsed = Math.min((Date.now() - initialTime) / 1000, duration);
-  const progress = elapsed / duration;
-  const offset = circumference * (1 - progress);
 
   // Format MM:SS
   const m = String(Math.floor(timeLeft / 60)).padStart(2, "0");
@@ -21,7 +19,7 @@ export default function RestTimerCircle({ duration, timeLeft }) {
   return (
     <div
       className="relative flex items-center justify-center"
-      style={{ width: size, height: size }}
+      style={{ width: size, height: size, pointerEvents: "none" }}
     >
       <svg width={size} height={size}>
         {/* Background orange circle */}
