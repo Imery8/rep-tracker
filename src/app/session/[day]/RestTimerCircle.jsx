@@ -40,7 +40,9 @@ export default function RestTimerCircle({ duration, timeLeft }) {
           strokeWidth={greyStroke}
           fill="none"
           strokeDasharray={circumference}
-          strokeDashoffset={circumference}
+          //strokeDashoffset={circumference}
+          strokeDashoffset={circumference * (1 - timeLeft / duration)}
+
           style={{
             animation: `dash ${duration}s linear forwards`
           }}
