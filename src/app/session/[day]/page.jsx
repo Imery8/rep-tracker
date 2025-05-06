@@ -114,15 +114,15 @@ export default function SessionPage() {
   }
 
   return (
-    <div className="max-w-2xl mx-auto min-h-screen flex flex-col justify-between p-4">
+    <div className="max-w-2xl mx-auto min-h-screen flex flex-col justify-between p-4 pt-2 sm:pt-4">
       {/* Top Row */}
-      <div className="flex justify-between items-center mb-8">
+      <div className="flex justify-between items-center mb-4 sm:mb-8 mt-2 sm:mt-0">
         <div className="text-2xl font-bold">{day}</div>
         <div className="text-3xl font-bold text-center flex-1">Workout Session</div>
         <div className="text-2xl font-bold">Set: {currentSet}/{workout.sets}</div>
       </div>
       {/* Timer */}
-      <div className="flex flex-col items-center justify-center flex-1">
+      <div className="flex flex-col items-center justify-center flex-1 mt-[-200px] sm:mt-0">
         <div className="flex items-center justify-center">
           {showRest ? (
             <RestTimerCircle duration={exercise.rest} timeLeft={restTime} />
@@ -133,7 +133,7 @@ export default function SessionPage() {
           )}
         </div>
         {/* Exercise/Rep and Next button */}
-        <div className="flex items-center justify-center mt-8 gap-8">
+        <div className="flex items-center justify-center mt-6 sm:mt-8 gap-8">
           <div className="text-xl">
             <div className="mb-2">Exercise: <span className="font-bold">{exercise.name}</span></div>
             <div>Rep: <span className="font-bold">{currentRep}</span> / {exercise.reps}</div>
@@ -148,7 +148,7 @@ export default function SessionPage() {
           </button>
         </div>
         {/* Next Exercise label just below the above row */}
-        <div className="flex justify-center mt-6 mb-2">
+        <div className="flex justify-center mt-4 sm:mt-6 mb-2">
           {nextExerciseName === "Final exercise" ? (
             <div className="font-bold text-xl">Final Exercise</div>
           ) : (
