@@ -1,6 +1,8 @@
 "use client";
 import { useState, useEffect } from "react";
 import { getCompletedDays } from "./utils/completedDays";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { faRotateRight } from "@fortawesome/free-solid-svg-icons";
 
 const daysOfWeek = [
   "Monday",
@@ -45,13 +47,14 @@ export default function Home() {
       <div className="flex items-center justify-between mb-6">
         <h1 className="text-2xl font-bold text-center flex-1">Workout Tracker</h1>
         <button
-          className="ml-4 px-4 py-2 bg-gray-900 rounded hover:bg-gray-800 text-sm font-semibold"
+          className="ml-4 px-4 py-2 bg-gray-900 rounded hover:bg-gray-800 text-sm font-semibold flex items-center justify-center"
           onClick={() => {
             localStorage.removeItem("completedDays");
             setCompleted({});
           }}
+          aria-label="Reset"
         >
-          Reset
+          <FontAwesomeIcon icon={faRotateRight} size="lg" />
         </button>
       </div>
       <ul className="space-y-4">
