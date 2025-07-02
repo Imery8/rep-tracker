@@ -94,10 +94,12 @@ export default function SessionPage() {
     }
   }, [user, authLoading, router]);
 
-  const handleNext = () => {
+  const handleNext = async () => {
     // If this is the last rep of the last exercise in the last set, finish workout
     if (isFinalStep) {
-      setCompletedDay(day);
+      if (user) {
+        await setCompletedDay(user.id, day);
+      }
       router.push("/");
       return;
     }

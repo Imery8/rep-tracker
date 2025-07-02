@@ -1,7 +1,7 @@
 "use client";
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { getCompletedDays } from "./utils/completedDays";
+import { getCompletedDays, setCompletedDay, removeCompletedDay, clearAllCompletedDays } from "./utils/completedDays";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faRotateRight } from "@fortawesome/free-solid-svg-icons";
 import { supabase } from "./utils/supabaseClient";
@@ -23,6 +23,7 @@ export default function Home() {
   const [completed, setCompleted] = useState({});
   const [workouts, setWorkouts] = useState([]);
   const [workoutsByDay, setWorkoutsByDay] = useState({});
+  const [completedLoading, setCompletedLoading] = useState(false);
 
   useEffect(() => {
     // Load workouts and map by day
@@ -35,15 +36,23 @@ export default function Home() {
   }, []);
 
   useEffect(() => {
-    setCompleted(getCompletedDays());
-  }, []);
+    async function fetchCompletedDays() {
+      if (user) {
+        setCompletedLoading(true);
+        const completedDays = await getCompletedDays(user.id);
+        setCompleted(completedDays);
+        setCompletedLoading(false);
+      }
+    }
+    fetchCompletedDays();
+  }, [user]);
 
   useEffect(() => {
     async function fetchWorkouts() {
       const { data, error } = await supabase
         .from("workouts")
         .select("*, exercises(*)")
-        .eq("user_id", user.id)
+        .eq("user_id", user.id) // Filter by user
         .order("created_at", { ascending: false });
       setWorkouts(data || []);
       // Map workouts by day
@@ -64,7 +73,7 @@ export default function Home() {
     if (user) {
       fetchWorkouts();
     }
-  }, [user]);
+  }, [user]); // Add user as dependency
 
   // Redirect to login if not authenticated
   useEffect(() => {
@@ -73,10 +82,27 @@ export default function Home() {
     }
   }, [user, loading, router]);
 
-  const handleCheckbox = (day) => {
-    const updated = { ...completed, [day]: !completed[day] };
+  const handleCheckbox = async (day) => {
+    if (!user) return;
+    
+    const isCompleted = !!completed[day];
+    const updated = { ...completed, [day]: !isCompleted };
     setCompleted(updated);
-    localStorage.setItem("completedDays", JSON.stringify(updated));
+    
+    if (!isCompleted) {
+      // Mark as completed
+      await setCompletedDay(user.id, day);
+    } else {
+      // Remove completed status
+      await removeCompletedDay(user.id, day);
+    }
+  };
+
+  const handleReset = async () => {
+    if (!user) return;
+    
+    await clearAllCompletedDays(user.id);
+    setCompleted({});
   };
 
   const handleStart = (day) => {
@@ -99,10 +125,8 @@ export default function Home() {
         <h1 className="text-2xl font-bold text-center flex-1">Workout Tracker</h1>
         <button
           className="ml-4 px-4 py-2 bg-gray-900 rounded hover:bg-gray-800 text-sm font-semibold flex items-center justify-center"
-          onClick={() => {
-            localStorage.removeItem("completedDays");
-            setCompleted({});
-          }}
+          onClick={handleReset}
+          disabled={completedLoading}
           aria-label="Reset"
         >
           <FontAwesomeIcon icon={faRotateRight} size="lg" />
@@ -117,6 +141,7 @@ export default function Home() {
                   type="checkbox"
                   checked={!!completed[day]}
                   onChange={() => handleCheckbox(day)}
+                  disabled={completedLoading}
                   className="w-5 h-5 accent-green-500"
                 />
                 <span className="text-lg font-medium">{day}</span>
