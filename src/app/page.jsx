@@ -3,6 +3,7 @@ import { useState, useEffect } from "react";
 import { getCompletedDays } from "./utils/completedDays";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faRotateRight } from "@fortawesome/free-solid-svg-icons";
+import { supabase } from "./utils/supabaseClient";
 
 const daysOfWeek = [
   "Monday",
@@ -16,6 +17,7 @@ const daysOfWeek = [
 
 export default function Home() {
   const [completed, setCompleted] = useState({});
+  const [workouts, setWorkouts] = useState([]);
   const [workoutsByDay, setWorkoutsByDay] = useState({});
 
   useEffect(() => {
@@ -30,6 +32,31 @@ export default function Home() {
 
   useEffect(() => {
     setCompleted(getCompletedDays());
+  }, []);
+
+  useEffect(() => {
+    async function fetchWorkouts() {
+      const { data, error } = await supabase
+        .from("workouts")
+        .select("*, exercises(*)")
+        .order("created_at", { ascending: false });
+      setWorkouts(data || []);
+      // Map workouts by day
+      const byDay = {};
+      daysOfWeek.forEach(day => {
+        byDay[day] = (data || []).find((w) => {
+          let daysArr = Array.isArray(w.days) ? w.days : [];
+          if (!Array.isArray(daysArr) && typeof w.days === 'string') {
+            try {
+              daysArr = JSON.parse(w.days);
+            } catch {}
+          }
+          return daysArr.includes(day);
+        }) || null;
+      });
+      setWorkoutsByDay(byDay);
+    }
+    fetchWorkouts();
   }, []);
 
   const handleCheckbox = (day) => {

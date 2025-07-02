@@ -3,6 +3,7 @@ import React, { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { setCompletedDay } from "../../utils/completedDays";
 import RestTimerCircle from "./RestTimerCircle";
+import { supabase } from "../../utils/supabaseClient";
 
 const daysOfWeek = [
   "Monday",
@@ -22,6 +23,7 @@ export default function SessionPage() {
   day = day.charAt(0).toUpperCase() + day.slice(1);
 
   const [workout, setWorkout] = useState(null);
+  const [loading, setLoading] = useState(true);
   const [currentSet, setCurrentSet] = useState(1);
   const [currentExercise, setCurrentExercise] = useState(0);
   const [currentRep, setCurrentRep] = useState(1);
@@ -29,9 +31,31 @@ export default function SessionPage() {
   const [restTime, setRestTime] = useState(0);
 
   useEffect(() => {
-    const workouts = JSON.parse(localStorage.getItem("workouts") || "[]");
-    const found = workouts.find((w) => w.days && w.days.includes(day));
-    setWorkout(found || null);
+    async function fetchWorkoutForDay() {
+      setLoading(true);
+      const { data, error } = await supabase
+        .from("workouts")
+        .select("*, exercises(*)")
+        .order("created_at", { ascending: false });
+      if (error) {
+        setWorkout(null);
+        setLoading(false);
+        return;
+      }
+      // Find the workout assigned to this day
+      const found = (data || []).find((w) => {
+        let daysArr = Array.isArray(w.days) ? w.days : [];
+        if (!Array.isArray(daysArr) && typeof w.days === 'string') {
+          try {
+            daysArr = JSON.parse(w.days);
+          } catch {}
+        }
+        return daysArr.includes(day);
+      });
+      setWorkout(found || null);
+      setLoading(false);
+    }
+    fetchWorkoutForDay();
   }, [day]);
 
   useEffect(() => {
@@ -52,6 +76,10 @@ export default function SessionPage() {
 
   if (!daysOfWeek.includes(day)) {
     return <div className="max-w-xl mx-auto p-4 text-center text-red-500">Invalid day.</div>;
+  }
+
+  if (loading) {
+    return <div className="max-w-xl mx-auto p-4 text-center text-gray-500">Loading...</div>;
   }
 
   if (!workout) {
