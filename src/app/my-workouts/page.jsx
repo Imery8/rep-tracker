@@ -1,12 +1,33 @@
 "use client";
 import React, { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import NewWorkoutModal from "./NewWorkoutModal";
 import { supabase } from "../utils/supabaseClient";
+import { useAuth } from "../utils/AuthContext";
 
 export default function MyWorkouts() {
+  const { user, loading } = useAuth();
+  const router = useRouter();
   const [showModal, setShowModal] = useState(false);
   const [workouts, setWorkouts] = useState([]);
   const [editingWorkout, setEditingWorkout] = useState(null);
+
+  // Redirect to login if not authenticated
+  useEffect(() => {
+    if (!loading && !user) {
+      router.push("/login");
+    }
+  }, [user, loading, router]);
+
+  // Show loading while checking auth
+  if (loading) {
+    return <div className="max-w-xl mx-auto p-4 text-center">Loading...</div>;
+  }
+
+  // Don't render anything if not authenticated (will redirect)
+  if (!user) {
+    return null;
+  }
 
   const handleSaveWorkout = async (workout) => {
     if (editingWorkout) {
@@ -18,7 +39,8 @@ export default function MyWorkouts() {
           sets: workout.sets,
           days: workout.days,
         })
-        .eq("id", editingWorkout.id);
+        .eq("id", editingWorkout.id)
+        .eq("user_id", user.id);
       if (updateError) {
         alert("Error updating workout");
         return;
@@ -50,6 +72,7 @@ export default function MyWorkouts() {
       name: workout.name,
       sets: workout.sets,
       days: workout.days,
+      user_id: user.id,
     });
     // Insert workout into Supabase
     const { data: workoutData, error: workoutError } = await supabase
@@ -59,6 +82,7 @@ export default function MyWorkouts() {
           name: workout.name,
           sets: workout.sets,
           days: workout.days,
+          user_id: user.id,
         },
       ])
       .select();
@@ -94,6 +118,7 @@ export default function MyWorkouts() {
     const { data, error } = await supabase
       .from("workouts")
       .select("*, exercises(*)")
+      .eq("user_id", user.id)
       .order("created_at", { ascending: false });
     if (!error) setWorkouts(data || []);
   };

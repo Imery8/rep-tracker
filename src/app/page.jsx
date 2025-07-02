@@ -1,9 +1,11 @@
 "use client";
 import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import { getCompletedDays } from "./utils/completedDays";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faRotateRight } from "@fortawesome/free-solid-svg-icons";
 import { supabase } from "./utils/supabaseClient";
+import { useAuth } from "./utils/AuthContext";
 
 const daysOfWeek = [
   "Monday",
@@ -16,6 +18,8 @@ const daysOfWeek = [
 ];
 
 export default function Home() {
+  const { user, loading } = useAuth();
+  const router = useRouter();
   const [completed, setCompleted] = useState({});
   const [workouts, setWorkouts] = useState([]);
   const [workoutsByDay, setWorkoutsByDay] = useState({});
@@ -39,6 +43,7 @@ export default function Home() {
       const { data, error } = await supabase
         .from("workouts")
         .select("*, exercises(*)")
+        .eq("user_id", user.id)
         .order("created_at", { ascending: false });
       setWorkouts(data || []);
       // Map workouts by day
@@ -56,8 +61,17 @@ export default function Home() {
       });
       setWorkoutsByDay(byDay);
     }
-    fetchWorkouts();
-  }, []);
+    if (user) {
+      fetchWorkouts();
+    }
+  }, [user]);
+
+  // Redirect to login if not authenticated
+  useEffect(() => {
+    if (!loading && !user) {
+      router.push("/login");
+    }
+  }, [user, loading, router]);
 
   const handleCheckbox = (day) => {
     const updated = { ...completed, [day]: !completed[day] };
@@ -68,6 +82,16 @@ export default function Home() {
   const handleStart = (day) => {
     window.location.href = `/session/${day.toLowerCase()}`;
   };
+
+  // Show loading while checking auth
+  if (loading) {
+    return <div className="max-w-xl mx-auto p-4 text-center">Loading...</div>;
+  }
+
+  // Don't render anything if not authenticated (will redirect)
+  if (!user) {
+    return null;
+  }
 
   return (
     <div className="max-w-xl mx-auto p-4">

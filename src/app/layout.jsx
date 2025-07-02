@@ -1,5 +1,7 @@
 import "./globals.css";
 import Link from "next/link";
+import { AuthProvider } from "./utils/AuthContext";
+import AuthNav from "./components/AuthNav";
 
 export const metadata = {
   title: "Create Next App",
@@ -10,11 +12,14 @@ export default function RootLayout({ children }) {
   return (
     <html lang="en">
       <body>
-        <nav className="w-full flex justify-center items-center gap-8 py-4 border-b border-gray-200 mb-8 z-50 relative">
-          <Link href="/" className="font-semibold text-lg hover:underline">Home</Link>
-          <Link href="/my-workouts" className="font-semibold text-lg hover:underline">My Workouts</Link>
-        </nav>
-        {children}
+        <AuthProvider>
+          <nav className="w-full flex justify-center items-center gap-8 py-4 border-b border-gray-200 mb-8 z-50 relative">
+            <Link href="/" className="font-semibold text-lg hover:underline">Home</Link>
+            <Link href="/my-workouts" className="font-semibold text-lg hover:underline">My Workouts</Link>
+            <AuthNav />
+          </nav>
+          {children}
+        </AuthProvider>
       </body>
     </html>
   );

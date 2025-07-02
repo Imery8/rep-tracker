@@ -4,6 +4,7 @@ import { useParams, useRouter } from "next/navigation";
 import { setCompletedDay } from "../../utils/completedDays";
 import RestTimerCircle from "./RestTimerCircle";
 import { supabase } from "../../utils/supabaseClient";
+import { useAuth } from "../../utils/AuthContext";
 
 const daysOfWeek = [
   "Monday",
@@ -16,6 +17,7 @@ const daysOfWeek = [
 ];
 
 export default function SessionPage() {
+  const { user, loading: authLoading } = useAuth();
   const params = useParams();
   const router = useRouter();
   let day = params?.day || "";
@@ -36,6 +38,7 @@ export default function SessionPage() {
       const { data, error } = await supabase
         .from("workouts")
         .select("*, exercises(*)")
+        .eq("user_id", user.id)
         .order("created_at", { ascending: false });
       if (error) {
         setWorkout(null);
@@ -55,8 +58,10 @@ export default function SessionPage() {
       setWorkout(found || null);
       setLoading(false);
     }
-    fetchWorkoutForDay();
-  }, [day]);
+    if (user) {
+      fetchWorkoutForDay();
+    }
+  }, [day, user]);
 
   useEffect(() => {
     if (showRest && restTime > 0) {
@@ -82,37 +87,12 @@ export default function SessionPage() {
     };
   }, []);
 
-  if (!daysOfWeek.includes(day)) {
-    return <div className="max-w-xl mx-auto p-4 text-center text-red-500">Invalid day.</div>;
-  }
-
-  if (loading) {
-    return <div className="max-w-xl mx-auto p-4 text-center text-gray-500">Loading...</div>;
-  }
-
-  if (!workout) {
-    return <div className="max-w-xl mx-auto p-4 text-center text-gray-500">No workout assigned for {day}.</div>;
-  }
-
-  const exercise = workout.exercises[currentExercise];
-  const isLastRep = currentRep === exercise.reps;
-  const isLastExercise = currentExercise === workout.exercises.length - 1;
-  const isLastSet = currentSet === workout.sets;
-
-  // Determine if this is the very last rep of the last exercise in the last set
-  const isFinalStep = isLastRep && isLastExercise && isLastSet;
-
-  // Next exercise name (for display)
-  let nextExerciseName = "-";
-  if (!isLastRep) {
-    nextExerciseName = exercise.name;
-  } else if (!isLastExercise) {
-    nextExerciseName = workout.exercises[currentExercise + 1].name;
-  } else if (!isLastSet) {
-    nextExerciseName = workout.exercises[0].name;
-  } else {
-    nextExerciseName = "Final exercise";
-  }
+  // Redirect to login if not authenticated
+  useEffect(() => {
+    if (!authLoading && !user) {
+      router.push("/login");
+    }
+  }, [user, authLoading, router]);
 
   const handleNext = () => {
     // If this is the last rep of the last exercise in the last set, finish workout
@@ -147,6 +127,48 @@ export default function SessionPage() {
     const m = String(Math.floor(seconds / 60)).padStart(2, "0");
     const s = String(seconds % 60).padStart(2, "0");
     return `${m}:${s}`;
+  }
+
+  // Show loading while checking auth
+  if (authLoading) {
+    return <div className="max-w-xl mx-auto p-4 text-center">Loading...</div>;
+  }
+
+  // Don't render anything if not authenticated (will redirect)
+  if (!user) {
+    return null;
+  }
+
+  if (!daysOfWeek.includes(day)) {
+    return <div className="max-w-xl mx-auto p-4 text-center text-red-500">Invalid day.</div>;
+  }
+
+  if (loading) {
+    return <div className="max-w-xl mx-auto p-4 text-center text-gray-500">Loading...</div>;
+  }
+
+  if (!workout) {
+    return <div className="max-w-xl mx-auto p-4 text-center text-gray-500">No workout assigned for {day}.</div>;
+  }
+
+  const exercise = workout.exercises[currentExercise];
+  const isLastRep = currentRep === exercise.reps;
+  const isLastExercise = currentExercise === workout.exercises.length - 1;
+  const isLastSet = currentSet === workout.sets;
+
+  // Determine if this is the very last rep of the last exercise in the last set
+  const isFinalStep = isLastRep && isLastExercise && isLastSet;
+
+  // Next exercise name (for display)
+  let nextExerciseName = "-";
+  if (!isLastRep) {
+    nextExerciseName = exercise.name;
+  } else if (!isLastExercise) {
+    nextExerciseName = workout.exercises[currentExercise + 1].name;
+  } else if (!isLastSet) {
+    nextExerciseName = workout.exercises[0].name;
+  } else {
+    nextExerciseName = "Final exercise";
   }
 
   return (
