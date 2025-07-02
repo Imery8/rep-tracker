@@ -74,6 +74,14 @@ export default function SessionPage() {
     }
   }, [showRest, restTime]);
 
+  useEffect(() => {
+    // Disable scrolling on session page
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = "";
+    };
+  }, []);
+
   if (!daysOfWeek.includes(day)) {
     return <div className="max-w-xl mx-auto p-4 text-center text-red-500">Invalid day.</div>;
   }
