@@ -1,9 +1,11 @@
 "use client";
+import { usePathname } from "next/navigation";
 import { useAuth } from "../utils/AuthContext";
 import { useState } from "react";
 
 export default function AuthNav() {
   const { user, signOut, loading } = useAuth();
+  const pathname = usePathname();
   const [logoutLoading, setLogoutLoading] = useState(false);
 
   const handleSignOut = async () => {
@@ -21,6 +23,11 @@ export default function AuthNav() {
   // Show loading only if not in logout process
   if (loading && !logoutLoading) {
     return <div className="text-gray-500">Loading...</div>;
+  }
+
+  // Hide logout button on session pages
+  if (pathname.startsWith("/session/")) {
+    return null;
   }
 
   // Show logout button if user is logged in OR if logout is in progress
