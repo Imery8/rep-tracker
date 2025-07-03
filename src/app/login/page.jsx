@@ -9,6 +9,8 @@ export default function LoginPage() {
   const [error, setError] = useState("");
   const [loginLoading, setLoginLoading] = useState(false);
   const [signupLoading, setSignupLoading] = useState(false);
+  const [showEmailConfirmation, setShowEmailConfirmation] = useState(false);
+  const [signupEmail, setSignupEmail] = useState("");
   const router = useRouter();
 
   const handleLogin = async (e) => {
@@ -33,9 +35,49 @@ export default function LoginPage() {
     if (error) {
       setError(error.message);
     } else {
-      router.push("/");
+      // Show email confirmation message instead of redirecting
+      setSignupEmail(email);
+      setShowEmailConfirmation(true);
+      setEmail("");
+      setPassword("");
     }
   };
+
+  const handleBackToLogin = () => {
+    setShowEmailConfirmation(false);
+    setSignupEmail("");
+    setError("");
+  };
+
+  if (showEmailConfirmation) {
+    return (
+      <div className="max-w-md mx-auto mt-20 p-6 border border-gray-200 rounded-lg shadow-lg bg-white w-11/12 sm:w-auto">
+        <div className="text-center">
+          <div className="text-green-600 text-6xl mb-4">✓</div>
+          <h1 className="text-2xl font-bold mb-4 text-gray-900">Check Your Email</h1>
+          <p className="text-gray-600 mb-6">
+            We've sent a confirmation link to <strong>{signupEmail}</strong>
+          </p>
+          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
+            <p className="text-blue-800 text-sm">
+              <strong>Next steps:</strong>
+            </p>
+            <ol className="text-blue-700 text-sm mt-2 space-y-1">
+              <li>1. Check your email inbox (and spam folder)</li>
+              <li>2. Click the confirmation link in the email</li>
+              <li>3. Come back here and log in</li>
+            </ol>
+          </div>
+          <button
+            onClick={handleBackToLogin}
+            className="bg-blue-600 text-white px-6 py-2 rounded hover:bg-blue-700 font-semibold transition-colors"
+          >
+            Back to Login
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="max-w-md mx-auto mt-20 p-6 border border-gray-200 rounded-lg shadow-lg bg-white w-11/12 sm:w-auto">
