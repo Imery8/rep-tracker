@@ -24,6 +24,7 @@ export default function Home() {
   const [workouts, setWorkouts] = useState([]);
   const [workoutsByDay, setWorkoutsByDay] = useState({});
   const [completedLoading, setCompletedLoading] = useState(false);
+  const [workoutsLoading, setWorkoutsLoading] = useState(true);
 
   useEffect(() => {
     // Load workouts and map by day
@@ -49,30 +50,32 @@ export default function Home() {
 
   useEffect(() => {
     async function fetchWorkouts() {
-      const { data, error } = await supabase
-        .from("workouts")
-        .select("*, exercises(*)")
-        .eq("user_id", user.id) // Filter by user
-        .order("created_at", { ascending: false });
-      setWorkouts(data || []);
-      // Map workouts by day
-      const byDay = {};
-      daysOfWeek.forEach(day => {
-        byDay[day] = (data || []).find((w) => {
-          let daysArr = Array.isArray(w.days) ? w.days : [];
-          if (!Array.isArray(daysArr) && typeof w.days === 'string') {
-            try {
-              daysArr = JSON.parse(w.days);
-            } catch {}
-          }
-          return daysArr.includes(day);
-        }) || null;
-      });
-      setWorkoutsByDay(byDay);
+      if (user) {
+        setWorkoutsLoading(true);
+        const { data, error } = await supabase
+          .from("workouts")
+          .select("*, exercises(*)")
+          .eq("user_id", user.id) // Filter by user
+          .order("created_at", { ascending: false });
+        setWorkouts(data || []);
+        // Map workouts by day
+        const byDay = {};
+        daysOfWeek.forEach(day => {
+          byDay[day] = (data || []).find((w) => {
+            let daysArr = Array.isArray(w.days) ? w.days : [];
+            if (!Array.isArray(daysArr) && typeof w.days === 'string') {
+              try {
+                daysArr = JSON.parse(w.days);
+              } catch {}
+            }
+            return daysArr.includes(day);
+          }) || null;
+        });
+        setWorkoutsByDay(byDay);
+        setWorkoutsLoading(false);
+      }
     }
-    if (user) {
-      fetchWorkouts();
-    }
+    fetchWorkouts();
   }, [user]); // Add user as dependency
 
   // Redirect to login if not authenticated
@@ -106,7 +109,13 @@ export default function Home() {
   };
 
   const handleStart = (day) => {
-    window.location.href = `/session/${day.toLowerCase()}`;
+    const workout = workoutsByDay[day];
+    if (workout) {
+      // Pass workout data through navigation state
+      router.push(`/session/${day.toLowerCase()}`, { 
+        state: { workout } 
+      });
+    }
   };
 
   // Show loading while checking auth
@@ -132,34 +141,40 @@ export default function Home() {
           <FontAwesomeIcon icon={faRotateRight} size="lg" />
         </button>
       </div>
-      <ul className="space-y-4">
-        {daysOfWeek.map((day) => (
-          <li key={day} className="flex items-center justify-between border rounded p-4">
-            <div className="flex flex-col gap-1">
-              <div className="flex items-center gap-3">
-                <input
-                  type="checkbox"
-                  checked={!!completed[day]}
-                  onChange={() => handleCheckbox(day)}
-                  disabled={completedLoading}
-                  className="w-5 h-5 accent-green-500"
-                />
-                <span className="text-lg font-medium">{day}</span>
+      {workoutsLoading || completedLoading ? (
+        <div className="text-center text-gray-500 mt-10">
+          Loading workouts...
+        </div>
+      ) : (
+        <ul className="space-y-4">
+          {daysOfWeek.map((day) => (
+            <li key={day} className="flex items-center justify-between border rounded p-4">
+              <div className="flex flex-col gap-1">
+                <div className="flex items-center gap-3">
+                  <input
+                    type="checkbox"
+                    checked={!!completed[day]}
+                    onChange={() => handleCheckbox(day)}
+                    disabled={completedLoading}
+                    className="w-5 h-5 accent-green-500"
+                  />
+                  <span className="text-lg font-medium">{day}</span>
+                </div>
+                <span className="text-sm text-gray-500 ml-8">
+                  {workoutsByDay[day] ? `Workout: ${workoutsByDay[day].name}` : "No workout assigned"}
+                </span>
               </div>
-              <span className="text-sm text-gray-500 ml-8">
-                {workoutsByDay[day] ? `Workout: ${workoutsByDay[day].name}` : "No workout assigned"}
-              </span>
-            </div>
-            <button
-              className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 disabled:bg-gray-800"
-              onClick={() => handleStart(day)}
-              disabled={!!completed[day] || !workoutsByDay[day]}
-            >
-              {completed[day] ? "Completed" : workoutsByDay[day] ? "Start" : "No Workout"}
-            </button>
-          </li>
-        ))}
-      </ul>
+              <button
+                className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 disabled:bg-gray-800"
+                onClick={() => handleStart(day)}
+                disabled={!!completed[day] || !workoutsByDay[day]}
+              >
+                {completed[day] ? "Completed" : workoutsByDay[day] ? "Start" : "No Workout"}
+              </button>
+            </li>
+          ))}
+        </ul>
+      )}
     </div>
   );
 } 

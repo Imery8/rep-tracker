@@ -11,6 +11,25 @@ export default function MyWorkouts() {
   const [showModal, setShowModal] = useState(false);
   const [workouts, setWorkouts] = useState([]);
   const [editingWorkout, setEditingWorkout] = useState(null);
+  const [workoutsLoading, setWorkoutsLoading] = useState(true);
+
+  // Fetch workouts from Supabase
+  const fetchWorkoutsFromSupabase = async () => {
+    if (user) {
+      setWorkoutsLoading(true);
+      const { data, error } = await supabase
+        .from("workouts")
+        .select("*, exercises(*)")
+        .eq("user_id", user.id)
+        .order("created_at", { ascending: false });
+      if (!error) setWorkouts(data || []);
+      setWorkoutsLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchWorkoutsFromSupabase();
+  }, [user]);
 
   // Redirect to login if not authenticated
   useEffect(() => {
@@ -18,16 +37,6 @@ export default function MyWorkouts() {
       router.push("/login");
     }
   }, [user, loading, router]);
-
-  // Show loading while checking auth
-  if (loading) {
-    return <div className="max-w-xl mx-auto p-4 text-center">Loading...</div>;
-  }
-
-  // Don't render anything if not authenticated (will redirect)
-  if (!user) {
-    return null;
-  }
 
   const handleSaveWorkout = async (workout) => {
     if (editingWorkout) {
@@ -113,20 +122,6 @@ export default function MyWorkouts() {
     setEditingWorkout(null);
   };
 
-  // Fetch workouts from Supabase
-  const fetchWorkoutsFromSupabase = async () => {
-    const { data, error } = await supabase
-      .from("workouts")
-      .select("*, exercises(*)")
-      .eq("user_id", user.id)
-      .order("created_at", { ascending: false });
-    if (!error) setWorkouts(data || []);
-  };
-
-  useEffect(() => {
-    fetchWorkoutsFromSupabase();
-  }, []);
-
   const handleDeleteWorkout = async (id) => {
     // Delete exercises for this workout (if not handled by ON DELETE CASCADE)
     await supabase.from("exercises").delete().eq("workout_id", id);
@@ -141,6 +136,16 @@ export default function MyWorkouts() {
     setShowModal(true);
   };
 
+  // Show loading while checking auth
+  if (loading) {
+    return <div className="max-w-xl mx-auto p-4 text-center">Loading...</div>;
+  }
+
+  // Don't render anything if not authenticated (will redirect)
+  if (!user) {
+    return null;
+  }
+
   return (
     <div className="max-w-xl mx-auto p-4">
       <h1 className="text-2xl font-bold mb-6 text-center">My Workouts</h1>
@@ -149,7 +154,11 @@ export default function MyWorkouts() {
           + New Workout
         </button>
       </div>
-      {workouts.length === 0 ? (
+      {workoutsLoading ? (
+        <div className="text-center text-gray-500 mt-10">
+          Loading workouts...
+        </div>
+      ) : workouts.length === 0 ? (
         <div className="text-center text-gray-500 mt-10">
           No workouts yet. Create your first workout!
         </div>

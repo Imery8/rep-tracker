@@ -25,16 +25,24 @@ export default function SessionPage() {
   day = day.charAt(0).toUpperCase() + day.slice(1);
 
   const [workout, setWorkout] = useState(null);
-  const [loading, setLoading] = useState(true);
+  const [stateLoading, setStateLoading] = useState(true);
   const [currentSet, setCurrentSet] = useState(1);
   const [currentExercise, setCurrentExercise] = useState(0);
   const [currentRep, setCurrentRep] = useState(1);
   const [showRest, setShowRest] = useState(false);
   const [restTime, setRestTime] = useState(0);
 
+  // Try to get workout from navigation state first, then fetch if needed
   useEffect(() => {
+    // Check if we have workout data in navigation state
+    if (router.state?.workout) {
+      setWorkout(router.state.workout);
+      setStateLoading(false);
+      return;
+    }
+
+    // Fallback: fetch workout from database
     async function fetchWorkoutForDay() {
-      setLoading(true);
       const { data, error } = await supabase
         .from("workouts")
         .select("*, exercises(*)")
@@ -42,7 +50,7 @@ export default function SessionPage() {
         .order("created_at", { ascending: false });
       if (error) {
         setWorkout(null);
-        setLoading(false);
+        setStateLoading(false);
         return;
       }
       // Find the workout assigned to this day
@@ -56,12 +64,15 @@ export default function SessionPage() {
         return daysArr.includes(day);
       });
       setWorkout(found || null);
-      setLoading(false);
+      setStateLoading(false);
     }
+    
     if (user) {
       fetchWorkoutForDay();
+    } else {
+      setStateLoading(false);
     }
-  }, [day, user]);
+  }, [day, user, router.state]);
 
   useEffect(() => {
     if (showRest && restTime > 0) {
@@ -145,13 +156,12 @@ export default function SessionPage() {
     return <div className="max-w-xl mx-auto p-4 text-center text-red-500">Invalid day.</div>;
   }
 
-  if (loading) {
-    return <div className="max-w-xl mx-auto p-4 text-center text-gray-500">Loading...</div>;
+  
+  // Show brief loading while waiting for workout data
+  if (stateLoading || !workout) {
+    return <div className="max-w-xl mx-auto p-4 text-center text-gray-500"></div>;
   }
 
-  if (!workout) {
-    return <div className="max-w-xl mx-auto p-4 text-center text-gray-500">No workout assigned for {day}.</div>;
-  }
 
   const exercise = workout.exercises[currentExercise];
   const isLastRep = currentRep === exercise.reps;
