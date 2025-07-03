@@ -25,8 +25,8 @@ export default function AuthNav() {
     return <div className="text-gray-500">Loading...</div>;
   }
 
-  // Hide logout button on session pages, password reset page, and login page
-  if (pathname.startsWith("/session/") || pathname === "/reset-password" || pathname === "/login") {
+  // Hide logout button on session pages, password reset page, login page, and home page
+  if (pathname.startsWith("/session/") || pathname === "/reset-password" || pathname === "/login" || pathname === "/") {
     return null;
   }
 

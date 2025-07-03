@@ -2,6 +2,7 @@
 import React, { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { setCompletedDay } from "../../utils/completedDays";
+import { saveWorkoutProgress, getWorkoutProgress, clearWorkoutProgress } from "../../utils/workoutProgress";
 import RestTimerCircle from "./RestTimerCircle";
 import { supabase } from "../../utils/supabaseClient";
 import { useAuth } from "../../utils/AuthContext";
@@ -26,51 +27,134 @@ export default function SessionPage() {
 
   const [workout, setWorkout] = useState(null);
   const [stateLoading, setStateLoading] = useState(true);
+  const [progressLoading, setProgressLoading] = useState(true);
   const [currentSet, setCurrentSet] = useState(1);
   const [currentExercise, setCurrentExercise] = useState(0);
   const [currentRep, setCurrentRep] = useState(1);
   const [showRest, setShowRest] = useState(false);
   const [restTime, setRestTime] = useState(0);
+  const [hasUserProgressed, setHasUserProgressed] = useState(false);
+
+  // Save progress when component unmounts or user navigates away
+  useEffect(() => {
+    const handleBeforeUnload = () => {
+      if (user && workout && !showRest && hasUserProgressed) {
+        console.log("Saving progress on beforeunload:", {
+          currentSet,
+          currentExercise,
+          currentRep
+        });
+        saveWorkoutProgress(user.id, day, workout.id, {
+          currentSet,
+          currentExercise,
+          currentRep
+        });
+      }
+    };
+
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'hidden' && user && workout && !showRest && hasUserProgressed) {
+        console.log("Saving progress on visibility change:", {
+          currentSet,
+          currentExercise,
+          currentRep
+        });
+        saveWorkoutProgress(user.id, day, workout.id, {
+          currentSet,
+          currentExercise,
+          currentRep
+        });
+      }
+    };
+
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+
+    return () => {
+      window.removeEventListener('beforeunload', handleBeforeUnload);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+      
+      // Save progress when component unmounts
+      if (user && workout && !showRest && hasUserProgressed) {
+        console.log("Saving progress on unmount:", {
+          currentSet,
+          currentExercise,
+          currentRep
+        });
+        saveWorkoutProgress(user.id, day, workout.id, {
+          currentSet,
+          currentExercise,
+          currentRep
+        });
+      }
+    };
+  }, [user, workout, day, currentSet, currentExercise, currentRep, showRest, hasUserProgressed]);
 
   // Try to get workout from navigation state first, then fetch if needed
   useEffect(() => {
-    // Check if we have workout data in navigation state
-    if (router.state?.workout) {
-      setWorkout(router.state.workout);
-      setStateLoading(false);
-      return;
-    }
-
-    // Fallback: fetch workout from database
-    async function fetchWorkoutForDay() {
-      const { data, error } = await supabase
-        .from("workouts")
-        .select("*, exercises(*)")
-        .eq("user_id", user.id)
-        .order("created_at", { ascending: false });
-      if (error) {
-        setWorkout(null);
-        setStateLoading(false);
-        return;
-      }
-      // Find the workout assigned to this day
-      const found = (data || []).find((w) => {
-        let daysArr = Array.isArray(w.days) ? w.days : [];
-        if (!Array.isArray(daysArr) && typeof w.days === 'string') {
-          try {
-            daysArr = JSON.parse(w.days);
-          } catch {}
+    async function loadWorkoutAndProgress() {
+      let workoutData = null;
+      
+      // Check if we have workout data in navigation state
+      if (router.state?.workout) {
+        workoutData = router.state.workout;
+      } else {
+        // Fallback: fetch workout from database
+        const { data, error } = await supabase
+          .from("workouts")
+          .select("*, exercises(*)")
+          .eq("user_id", user.id)
+          .order("created_at", { ascending: false });
+        if (error) {
+          setWorkout(null);
+          setStateLoading(false);
+          setProgressLoading(false);
+          return;
         }
-        return daysArr.includes(day);
-      });
-      setWorkout(found || null);
+        // Find the workout assigned to this day
+        workoutData = (data || []).find((w) => {
+          let daysArr = Array.isArray(w.days) ? w.days : [];
+          if (!Array.isArray(daysArr) && typeof w.days === 'string') {
+            try {
+              daysArr = JSON.parse(w.days);
+            } catch {}
+          }
+          return daysArr.includes(day);
+        }) || null;
+      }
+      
+      setWorkout(workoutData);
       setStateLoading(false);
+      
+      // Load progress after workout is set
+      if (workoutData && user) {
+        setProgressLoading(true);
+        console.log("Loading progress for workout:", workoutData.id);
+        const progress = await getWorkoutProgress(user.id, day);
+        console.log("Progress loaded:", progress);
+        if (progress) {
+          console.log("Setting progress state:", {
+            currentSet: progress.current_set,
+            currentExercise: progress.current_exercise,
+            currentRep: progress.current_rep
+          });
+          setCurrentSet(progress.current_set);
+          setCurrentExercise(progress.current_exercise);
+          setCurrentRep(progress.current_rep);
+        } else {
+          console.log("No progress found, using default values");
+        }
+        setProgressLoading(false);
+      } else {
+        setProgressLoading(false);
+      }
     }
     
     if (user) {
-      fetchWorkoutForDay();
+      loadWorkoutAndProgress();
     } else {
       setStateLoading(false);
+      setProgressLoading(false);
     }
   }, [day, user, router.state]);
 
@@ -110,10 +194,14 @@ export default function SessionPage() {
     if (isFinalStep) {
       if (user) {
         await setCompletedDay(user.id, day);
+        await clearWorkoutProgress(user.id, day); // Clear progress when completed
       }
       router.push("/");
       return;
     }
+
+    // Mark that user has progressed
+    setHasUserProgressed(true);
 
     // Show rest timer after every rep except the very last rep of the last exercise in the last set
     setShowRest(true);
@@ -158,8 +246,8 @@ export default function SessionPage() {
 
   
   // Show brief loading while waiting for workout data
-  if (stateLoading || !workout) {
-    return <div className="max-w-xl mx-auto p-4 text-center text-gray-500"></div>;
+  if (stateLoading || progressLoading || !workout) {
+    return <div className="max-w-xl mx-auto p-4 text-center text-gray-500">Loading workout...</div>;
   }
 
 
