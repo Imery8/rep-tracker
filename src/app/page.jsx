@@ -144,9 +144,24 @@ export default function Home() {
     setWorkoutProgress({});
   };
 
-  const handleStart = (day) => {
+  const handleStart = async (day) => {
     const workout = workoutsByDay[day];
     if (workout) {
+      // Clear any existing progress to ensure fresh start
+      if (user) {
+        try {
+          await clearWorkoutProgress(user.id, day);
+          // Update local progress state
+          setWorkoutProgress(prev => ({
+            ...prev,
+            [day]: false
+          }));
+        } catch (error) {
+          console.error('Error clearing workout progress:', error);
+          // Continue anyway - don't let this prevent starting the workout
+        }
+      }
+      
       // Pass workout data through navigation state
       router.push(`/session/${day.toLowerCase()}`, { 
         state: { workout } 
