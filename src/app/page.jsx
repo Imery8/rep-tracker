@@ -121,27 +121,29 @@ export default function Home() {
         [day]: false
       }));
     } else {
-      // Remove completed status
-      await removeCompletedDay(user.id, day);
-      // Don't restore progress when unchecking - user should start fresh
+      // Remove completed status and clear progress immediately to prevent button flashing
       setWorkoutProgress(prev => ({
         ...prev,
         [day]: false
       }));
+      await removeCompletedDay(user.id, day);
+      // Don't restore progress when unchecking - user should start fresh
     }
   };
 
   const handleReset = async () => {
     if (!user) return;
     
-    await clearAllCompletedDays(user.id);
+    // Clear local state immediately to prevent button flashing
     setCompleted({});
+    setWorkoutProgress({});
+    
+    await clearAllCompletedDays(user.id);
     
     // Clear workout progress for all days when resetting
     for (const day of daysOfWeek) {
       await clearWorkoutProgress(user.id, day);
     }
-    setWorkoutProgress({});
   };
 
   const handleStart = async (day) => {
